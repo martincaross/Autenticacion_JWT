@@ -35,3 +35,7 @@ class Address(db.Model):
             "city": self.city
             # do not serialize the password, its a security breach
         }
+# se agrego un modelo para guardar los tokens bloqueados por cierres de sesion 
+# class TokenBloakcedList(db.Model):
+#     id: mapped 
+#     jti: mapped_column(String(50), nullable=True)
