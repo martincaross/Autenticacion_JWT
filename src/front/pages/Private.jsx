@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const BackendURL = import.meta.env.VITE_BACKEND_URL;
+
 export const Private = () => {
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
@@ -13,7 +15,7 @@ export const Private = () => {
       return;
     }
 
-    fetch(import.meta.env.VITE_BACKEND_URL + "/api/private", {
+    fetch(`${BackendURL}/api/private`, {
       headers: {
         Authorization: "Bearer " + token,
       },

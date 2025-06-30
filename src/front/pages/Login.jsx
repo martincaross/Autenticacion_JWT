@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const BackendURL = import.meta.env.VITE_BACKEND_URL;
+
+
 export const Login = () => {
   const navigate = useNavigate();
 
@@ -12,7 +15,7 @@ export const Login = () => {
     e.preventDefault();
 
     try {
-    const resp = await fetch("https://TU-BACKEND-URL/api/login", {
+    const resp = await fetch(`${BackendURL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

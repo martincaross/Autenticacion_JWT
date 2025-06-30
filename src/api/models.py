@@ -21,21 +21,6 @@ class User(db.Model):
             # do not serialize the password, its a security breach
         }
     
-class Address(db.Model):
+class TokenBlockedList(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    street_name: Mapped[str] = mapped_column(String(120), unique=False, nullable=False)
-    city: Mapped[str] = mapped_column(String(120), nullable=False)
-
-
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "street_name": self.street_name,
-            "city": self.city
-            # do not serialize the password, its a security breach
-        }
-# se agrego un modelo para guardar los tokens bloqueados por cierres de sesion 
-# class TokenBloakcedList(db.Model):
-#     id: mapped 
-#     jti: mapped_column(String(50), nullable=True)
+    jti: Mapped[str] = mapped_column(String(120),  nullable=False)

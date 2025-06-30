@@ -6,11 +6,11 @@ from flask import Flask, request, jsonify, url_for, send_from_directory
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from api.utils import APIException, generate_sitemap
-from api.models import db
+from api.models import db, TokenBlockedList
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
-
+from flask_jwt_extended import JWTManager
 
 
 # from models import Person
@@ -25,19 +25,19 @@ app.url_map.strict_slashes = False
 
 # JWT Configuration
 #  se configura el JWT-sectet para generar los tokens tomando el valor de las variables de entorno
-# app.config["JWT_SECRET_KEY"] = os.getenv("FLASK_APP_KEY")
+app.config["JWT_SECRET_KEY"] = os.getenv("FLASK_APP_KEY")
 #   se crea la instancia de jwt
-# jwt = JWTManager(app)
+jwt = JWTManager(app)
 
 #    se registra el decorador que valida los tokens bloqueados
-# @jwt.token_in_blocklist_loader
-# def check_if_token_revoked(jwt_header, jwt_payload:dict) -> bool:
-#     toma el jit del token
-#   jti = jwt_payload["jti"]
-#   busca el jti en la lista de tokens bloqueados
-# token = tokenblockedlist.query.filter_by(jti=jti).first()
-#  retorna si consiguio el jti o no. Si lo consigue, la peticion se bloquea, si no continua
-#   return token is not None
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload:dict) -> bool:
+    # toma el jit del token
+    jti = jwt_payload["jti"]
+    # busca el jti en la lista de tokens bloqueados
+    token = TokenBlockedList.query.filter_by(jti=jti).first()
+    # retorna si consiguio el jti o no. Si lo consigue, la peticion se bloquea, si no continua
+    return token is not None
 
 # database condiguration
 db_url = os.getenv("DATABASE_URL")

@@ -2,22 +2,24 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User
+from api.models import db, User, TokenBlockedList
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, JWTManager, create_access_token, get_jwt
 from flask_bcrypt import Bcrypt
 
 
 api = Blueprint('api', __name__)
+bcrypt = Bcrypt()
 
 # Allow CORS requests to this API
 CORS(api)
-bcrypt = Bcrypt()  # Aquí creamos la instancia
 
-@api.record
-def init_bcrypt(setup_state):
-    bcrypt.init_app(setup_state.app)
+
+
+# @api.record
+# def init_bcrypt(setup_state):
+#     bcrypt.init_app(setup_state.app)
 
 @api.route('/hello', methods=['POST', 'GET'])
 def handle_hello():
@@ -28,14 +30,22 @@ def handle_hello():
 
     return jsonify(response_body), 200
 
+# Get users
+
+
+# Singup
 @api.route('/signup', methods=['POST'])
 def signup():
     body = request.get_json()
     email = body.get('email')
+    fullname = body.get("fullname")
     password = body.get('password')
 
     if not email or not password:
         return jsonify({"msg": "Email and password required"}), 400
+    
+    if not fullname:
+        return jsonify({"msg": "fullname es requerido"}), 400
     
     # Verificar si ya existe un usuario con ese email
     existing_user = User.query.filter_by(email=email).first()
@@ -44,7 +54,7 @@ def signup():
     
     # Crear nuevo usuario
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(email=email, password=password, is_active=True)
+    new_user = User(email=email, fullname=fullname, password=hashed_password, is_active=True)
     db.session.add(new_user)
     db.session.commit()
 
@@ -64,11 +74,30 @@ def login_user():
     if not is_valid_password:
         return jsonify({"msg":"Clave inválida"}), 401
     # Generar el token
-    token=create_access_token(identify=user.id)
+    token=create_access_token(identity=user.id)
     return jsonify({"token":token}), 200
+
+# @api.route('/private', methods=['GET'])
+# @jwt_required()
+# def private_route():
+#     current_user = get_jwt_identity()
+#     return jsonify({"msg": f"Bienvenido, {current_user}"}), 200
 
 @api.route('/private', methods=['GET'])
 @jwt_required()
 def private_route():
     current_user = get_jwt_identity()
     return jsonify({"msg": f"Bienvenido, {current_user}"}), 200
+
+
+@api.route('/logout', methods=['POST'])
+@jwt_required()
+def user_logout():
+    # se obtiene el payload del token
+    payload = get_jwt()
+    # se creo un registro del token bloqueado con el jti del token
+    token_blocked = TokenBlockedList(jti=payload["jti"])
+    # se guarda en la base de datos
+    db.session.add(token_blocked)
+    db.session.commit()
+    return jsonify({"msg":"User logged out"})

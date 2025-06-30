@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const BackendURL = import.meta.env.VITE_BACKEND_URL;
+
 export const Signup = () => {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
+  const [fullname, setFullname] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -12,20 +15,19 @@ export const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const API = import.meta.env.VITE_BACKEND_URL;
-
-    const resp = await fetch(`${API}/api/signup`, {
+    const resp = await fetch(`${BackendURL}/api/signup`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, fullname ,password }),
     });
 
     if (resp.ok) {
       setSuccess("Usuario registrado correctamente");
       setError(null);
       setEmail("");
+      setFullname("");
       setPassword("");
       setTimeout(() => {
         navigate("/login");
@@ -44,6 +46,13 @@ export const Signup = () => {
       {success && <p style={{ color: "green" }}>{success}</p>}
 
       <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Nombre completo"
+          value={fullname}
+          onChange={(e) => setFullname(e.target.value)}
+          required
+        />
         <input
           type="email"
           placeholder="Correo electrónico"
