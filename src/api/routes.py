@@ -10,12 +10,11 @@ from flask_bcrypt import Bcrypt
 
 
 api = Blueprint('api', __name__)
+app = Flask(__name__)
 bcrypt = Bcrypt()
 
 # Allow CORS requests to this API
 CORS(api)
-
-
 
 # @api.record
 # def init_bcrypt(setup_state):
@@ -31,7 +30,10 @@ def handle_hello():
     return jsonify(response_body), 200
 
 # Get users
-
+@api.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    return jsonify([user.serialize() for user in users]), 200
 
 # Singup
 @api.route('/signup', methods=['POST'])
@@ -63,7 +65,7 @@ def signup():
         "user": new_user.serialize()  # <--- Aquí usamos el serialize
     }), 201
 
-
+# Login
 @api.route('/login', methods=['POST'])
 def login_user():
     body=request.get_json()
@@ -73,21 +75,32 @@ def login_user():
     is_valid_password=bcrypt.check_password_hash(user.password, body["password"])
     if not is_valid_password:
         return jsonify({"msg":"Clave inválida"}), 401
+    payload = {
+        "admin": False,
+        "permissions":123123
+    }
     # Generar el token
-    token=create_access_token(identity=user.id)
+    token=create_access_token(identity=str(user.id), additional_claims=payload)
     return jsonify({"token":token}), 200
 
-# @api.route('/private', methods=['GET'])
-# @jwt_required()
-# def private_route():
-#     current_user = get_jwt_identity()
-#     return jsonify({"msg": f"Bienvenido, {current_user}"}), 200
+
+@api.route('/userinfo', methods=['GET'])
+@jwt_required()
+def user_info():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    payload = get_jwt()
+    return jsonify({
+        "user": user.serialize(),
+        "payload": payload
+    }), 200
+
 
 @api.route('/private', methods=['GET'])
 @jwt_required()
 def private_route():
     current_user = get_jwt_identity()
-    return jsonify({"msg": f"Bienvenido, {current_user}"}), 200
+    return jsonify(logged_in_as=current_user), 200
 
 
 @api.route('/logout', methods=['POST'])
